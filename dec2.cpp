@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
+#include <io.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -10,7 +10,7 @@
 int main(int argc, char** argv) {
 
   if (argc!=3) {
-    printf("command (for example) : ./enc2 file_to_encrypt key_in_hex\n");
+    printf("command (for example) : ./dec2 file_to_encrypt key_in_hex\n");
     return 1;
   }
   
@@ -33,31 +33,31 @@ int main(int argc, char** argv) {
   }
 
   // open the file to save the encryption
-  char enc[strlen(file)+10];
+  char* enc = new char[strlen(file) + 10];
   strncpy(enc, file, strlen(file));
-  strncpy(enc+strlen(file), ".enc2\0", 5);
+  strncpy(enc+strlen(file), ".dec2\0", 5);
   enc[strlen(file)+5]='\0';
-  int fdc=open(enc, O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR);
+  int fdc=open(enc, O_CREAT|O_WRONLY, S_IREAD| S_IWRITE);
   if (fdc<0) {
     printf("cannot save the encrypted file %s\n", enc);
     return 1;
   }
 
-  // encryption
+  // decryption
   DES_cblock in, out;
   int len;
   while ((len=read(fdp, (char*)&in, 8))>0) {
-    if (len<8) {
+    if (len!=8) {
       char* buf=(char*)&in;
       for (; len<8; len++) buf[len]='\0';
       printf("warning, the end of the file does not have 8 bytes\n");
     }
-    DES_ecb_encrypt(&in, &out, &ks, DES_ENCRYPT);
+    DES_ecb_encrypt(&in, &out, &ks, DES_DECRYPT);
     write(fdc, (char*)&out, len);
   }
 
   close(fdp);
   close(fdc);
   return 0;
+  return 0;
 }
-
